@@ -16,12 +16,24 @@ import tuwien.auto.calimero.link.medium.TPSettings;
 import tuwien.auto.calimero.process.ProcessCommunicator;
 import tuwien.auto.calimero.process.ProcessCommunicatorImpl;
 
-public class KnxBusConnection {
+public class KnxBusConnection extends Thread {
 
+    private final String gatewayIp;
+    private final String hostIp;
     private KNXNetworkLinkIP netLinkIp = null;
     private ProcessCommunicator processCommunicator;
 
-    public boolean initBus(String hostIp, String gatewayIp) {
+    public KnxBusConnection(String hostIp, String gatewayIp) {
+        this.hostIp = hostIp;
+        this.gatewayIp = gatewayIp;
+    }
+
+    @Override
+    public void run() {
+        initBus(hostIp, gatewayIp);
+    }
+
+    private synchronized boolean initBus(String hostIp, String gatewayIp) {
         boolean result = false;
         try {
             netLinkIp = new KNXNetworkLinkIP(KNXNetworkLinkIP.TUNNEL, new InetSocketAddress(InetAddress.getByName(null), 0), new InetSocketAddress(InetAddress.getByName(gatewayIp), KNXnetIPConnection.IP_PORT), false, new TPSettings(false));
@@ -43,7 +55,7 @@ public class KnxBusConnection {
         return result;
     }
 
-    public boolean writeToBus(GroupAddress groupAddress, boolean value) {
+    public synchronized boolean writeToBus(GroupAddress groupAddress, boolean value) {
         boolean result = false;
         try {
             processCommunicator.write(groupAddress, value);
@@ -58,7 +70,7 @@ public class KnxBusConnection {
         return result;
     }
 
-    public boolean readBooleanFromBus(GroupAddress groupAddress) throws KNXException {
+    public synchronized boolean readBooleanFromBus(GroupAddress groupAddress) throws KNXException {
         boolean readBoolean = false;
         try {
             readBoolean = processCommunicator.readBool(groupAddress);
@@ -70,7 +82,7 @@ public class KnxBusConnection {
         return readBoolean;
     }
 
-    public float readFloatFromBus(GroupAddress groupAddress) throws KNXException {
+    public synchronized float readFloatFromBus(GroupAddress groupAddress) throws KNXException {
         float readFloat = -1;
         try {
             readFloat = processCommunicator.readFloat(groupAddress);
@@ -82,7 +94,7 @@ public class KnxBusConnection {
         return readFloat;
     }
 
-    public void closeBus() {
+    public synchronized void closeBus() {
         netLinkIp.close();
     }
 }
