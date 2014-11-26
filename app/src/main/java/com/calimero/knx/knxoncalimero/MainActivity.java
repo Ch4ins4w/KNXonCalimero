@@ -22,7 +22,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         testConnection = new KnxBusConnection();
         if (testConnection.initBus("", "192.168.10.28")) {
-            Button sendButton = (Button) findViewById(R.id.sendButton);
+            Button sendButton = (Button) findViewById(R.id.btnSend);
             sendButton.setOnClickListener(new Button.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -32,7 +32,7 @@ public class MainActivity extends Activity {
                 }
             });
 
-            Button closeButton = (Button) findViewById(R.id.closeButton);
+            Button closeButton = (Button) findViewById(R.id.btnConnect);
             closeButton.setOnClickListener(new Button.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -42,7 +42,7 @@ public class MainActivity extends Activity {
                 }
             });
 
-            Button readButton = (Button) findViewById(R.id.readButton);
+            Button readButton = (Button) findViewById(R.id.btnReceive);
             readButton.setOnClickListener(new Button.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -56,7 +56,7 @@ public class MainActivity extends Activity {
                 }
             });
         } else {
-            TextView textView = (TextView) findViewById(R.id.textView);
+            TextView textView = (TextView) findViewById(R.id.tvConnectionStatus);
             textView.setText("Cannont open Connection");
         }
     }
