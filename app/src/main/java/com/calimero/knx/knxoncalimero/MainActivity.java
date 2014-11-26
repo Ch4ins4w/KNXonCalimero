@@ -6,33 +6,59 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
+
+import tuwien.auto.calimero.GroupAddress;
+import tuwien.auto.calimero.exception.KNXException;
 
 
 public class MainActivity extends Activity {
     public static boolean first = true;
     public static KnxBusConnection testConnection;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         testConnection = new KnxBusConnection();
-        testConnection.busInit("", "192.168.10.28"); //Add Adresses
+        if (testConnection.initBus("", "192.168.10.28")) {
+            Button sendButton = (Button) findViewById(R.id.sendButton);
+            sendButton.setOnClickListener(new Button.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    testConnection.writeToBus(new GroupAddress(0, 0, 1), true);
+                    TextView textView = (TextView) findViewById(R.id.textView);
+                    textView.setText("Bus was written");
+                }
+            });
 
-        Button sendButton = (Button) findViewById(R.id.sendButton);
-        sendButton.setOnClickListener(new Button.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                testConnection.writeSoTH();
-            }
-        });
+            Button closeButton = (Button) findViewById(R.id.closeButton);
+            closeButton.setOnClickListener(new Button.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    testConnection.closeBus();
+                    TextView textView = (TextView) findViewById(R.id.textView);
+                    textView.setText("Bus closed");
+                }
+            });
 
-        Button closeButton = (Button) findViewById(R.id.closeButton);
-        closeButton.setOnClickListener(new Button.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                testConnection.busClose();
-            }
-        });
+            Button readButton = (Button) findViewById(R.id.readButton);
+            readButton.setOnClickListener(new Button.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    TextView textView = (TextView) findViewById(R.id.textView);
+                    try {
+                        boolean read = testConnection.readBooleanFromBus(new GroupAddress(1, 1, 1));
+                        textView.setText("Read " + read + " from Bus");
+                    } catch (KNXException e) {
+                        textView.setText("Exception while reading");
+                    }
+                }
+            });
+        } else {
+            TextView textView = (TextView) findViewById(R.id.textView);
+            textView.setText("Cannont open Connection");
+        }
     }
 
 
