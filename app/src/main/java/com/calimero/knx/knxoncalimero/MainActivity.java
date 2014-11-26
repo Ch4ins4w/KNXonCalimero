@@ -21,44 +21,59 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         testConnection = new KnxBusConnection();
-        if (testConnection.initBus("", "192.168.10.28")) {
-            Button sendButton = (Button) findViewById(R.id.btnSend);
-            sendButton.setOnClickListener(new Button.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    testConnection.writeToBus(new GroupAddress(0, 0, 1), true);
-                    TextView textView = (TextView) findViewById(R.id.textView);
-                    textView.setText("Bus was written");
-                }
-            });
 
-            Button closeButton = (Button) findViewById(R.id.btnConnect);
-            closeButton.setOnClickListener(new Button.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    testConnection.closeBus();
-                    TextView textView = (TextView) findViewById(R.id.textView);
-                    textView.setText("Bus closed");
-                }
-            });
 
-            Button readButton = (Button) findViewById(R.id.btnReceive);
-            readButton.setOnClickListener(new Button.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    TextView textView = (TextView) findViewById(R.id.textView);
-                    try {
-                        boolean read = testConnection.readBooleanFromBus(new GroupAddress(1, 1, 1));
-                        textView.setText("Read " + read + " from Bus");
-                    } catch (KNXException e) {
-                        textView.setText("Exception while reading");
-                    }
+        Button sendButton = (Button) findViewById(R.id.btnSend);
+        sendButton.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                testConnection.writeToBus(new GroupAddress(0, 0, 1), true);
+                TextView textView = (TextView) findViewById(R.id.textView);
+                textView.setText("Bus was written");
+            }
+        });
+
+
+        Button connectButton = (Button) findViewById(R.id.btnConnect);
+        connectButton.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (testConnection.initBus("", "192.168.10.28")) {
+                    TextView textView = (TextView) findViewById(R.id.tvConnectionStatus);
+                    textView.setText("Connected!");
+                } else {
+                    TextView textView = (TextView) findViewById(R.id.tvConnectionStatus);
+                    textView.setText("Cannont open Connection");
                 }
-            });
-        } else {
-            TextView textView = (TextView) findViewById(R.id.tvConnectionStatus);
-            textView.setText("Cannont open Connection");
-        }
+
+            }
+        });
+
+        /*Button closeButton = (Button) findViewById(R.id.btnConnect);
+        closeButton.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                testConnection.closeBus();
+                TextView textView = (TextView) findViewById(R.id.textView);
+                textView.setText("Bus closed");
+            }
+        });*/
+
+        Button readButton = (Button) findViewById(R.id.btnReceive);
+        readButton.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                TextView textView = (TextView) findViewById(R.id.tfRcvValue);
+                try {
+                    boolean read = testConnection.readBooleanFromBus(new GroupAddress(0, 0, 1));
+                    textView.setText("Read " + read + " from Bus");
+                } catch (KNXException e) {
+                    textView.setText("Exception while reading");
+                }
+            }
+        });
+
+
     }
 
 
