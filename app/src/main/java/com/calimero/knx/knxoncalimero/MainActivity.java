@@ -6,28 +6,31 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 
 
 public class MainActivity extends Activity {
     public static boolean first = true;
-
+    public static KnxBusConnection testConnection;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Button button = (Button) findViewById(R.id.button);
-        button.setOnClickListener(new Button.OnClickListener() {
+        testConnection = new KnxBusConnection();
+        testConnection.busInit("", "192.168.10.28"); //Add Adresses
+
+        Button sendButton = (Button) findViewById(R.id.sendButton);
+        sendButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
-                TextView tw = (TextView) findViewById(R.id.textView2);
-                if (first) {
-                    tw.setText("Button Clicked");
-                    first = false;
-                } else {
-                    tw.setText("Button Clicked Again");
-                    first = true;
-                }
+                testConnection.writeSoTH();
+            }
+        });
+
+        Button closeButton = (Button) findViewById(R.id.closeButton);
+        closeButton.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                testConnection.busClose();
             }
         });
     }
