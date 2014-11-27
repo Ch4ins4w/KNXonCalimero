@@ -16,11 +16,12 @@ public class MainActivity extends Activity {
     public static boolean first = true;
     public static KnxBusConnection testConnection;
 
+    KnxBusConnection connectionThread;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        testConnection = new KnxBusConnection();
+        //testConnection = new KnxBusConnection("", "192.168.10.28");
 
 
         Button sendButton = (Button) findViewById(R.id.btnSend);
@@ -38,13 +39,15 @@ public class MainActivity extends Activity {
         connectButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (testConnection.initBus("", "192.168.10.28")) {
+                KnxBusConnection connectionThread = new KnxBusConnection("192.168.10.0", "192.168.10.28");
+                connectionThread.start();
+                /*if (testConnection.initBus("", "192.168.10.28")) {
                     TextView textView = (TextView) findViewById(R.id.tvConnectionStatus);
                     textView.setText("Connected!");
                 } else {
                     TextView textView = (TextView) findViewById(R.id.tvConnectionStatus);
                     textView.setText("Cannont open Connection");
-                }
+                }*/
 
             }
         });
