@@ -1,6 +1,10 @@
 package com.calimero.knx.knxoncalimero;
 
 
+import com.calimero.knx.knxoncalimero.knxobject.KnxBooleanObject;
+import com.calimero.knx.knxoncalimero.knxobject.KnxComparableObject;
+import com.calimero.knx.knxoncalimero.knxobject.KnxFloatObject;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -20,17 +24,42 @@ public class KnxBusConnection extends Thread {
 
     private final String gatewayIp;
     private final String hostIp;
+    private final Container writeContainer, readContainer, readResultContainer;
     private KNXNetworkLinkIP netLinkIp = null;
     private ProcessCommunicator processCommunicator;
 
-    public KnxBusConnection(String hostIp, String gatewayIp) {
+    public KnxBusConnection(String hostIp, String gatewayIp, Container readContainer, Container writeContainer, Container readResultContainer) {
         this.hostIp = hostIp;
         this.gatewayIp = gatewayIp;
+        this.writeContainer = writeContainer;
+        this.readContainer = readContainer;
+        this.readResultContainer = readResultContainer;
     }
 
     @Override
     public void run() {
-        initBus(hostIp, gatewayIp);
+        boolean started = initBus(hostIp, gatewayIp);
+        KnxComparableObject object;
+        while (started && !this.isInterrupted()) {
+            while (!writeContainer.isEmpty()) {
+                object = writeContainer.pop();
+                if (object instanceof KnxBooleanObject) {
+                    writeBooleanToBus(object.getGroupAddress(), ((KnxBooleanObject) object).getValue());
+                }
+            }
+
+            while (!readContainer.isEmpty()) {
+                object = readContainer.pop();
+                if (object instanceof KnxFloatObject) {
+                    float read = readFloatFromBus(object.getGroupAddress());
+                    ((KnxFloatObject) object).setValue(read);
+                } else if (object instanceof KnxBooleanObject) {
+                    boolean read = readBooleanFromBus(object.getGroupAddress());
+                    ((KnxBooleanObject) object).setValue(read);
+                }
+                readResultContainer.push(object);
+            }
+        }
     }
 
     private synchronized boolean initBus(String hostIp, String gatewayIp) {
@@ -55,46 +84,45 @@ public class KnxBusConnection extends Thread {
         return result;
     }
 
-    public synchronized boolean writeToBus(GroupAddress groupAddress, boolean value) {
+    private synchronized boolean writeBooleanToBus(GroupAddress groupAddress, boolean value) {
         boolean result = false;
         try {
             processCommunicator.write(groupAddress, value);
             result = true;
         } catch (KNXTimeoutException e) {
-            System.out.println("KNXTimeoutException, writeToBus(" + value + ", " + groupAddress + ")");
+            System.out.println("KNXTimeoutException, writeBooleanToBus(" + value + ", " + groupAddress + ")");
             e.printStackTrace();
         } catch (KNXLinkClosedException e) {
-            System.out.println("KNXLinkClosedException, writeToBus(" + value + ", " + groupAddress + ")");
+            System.out.println("KNXLinkClosedException, writeBooleanToBus(" + value + ", " + groupAddress + ")");
             e.printStackTrace();
         }
         return result;
     }
 
-    public synchronized boolean readBooleanFromBus(GroupAddress groupAddress) throws KNXException {
+    private synchronized boolean readBooleanFromBus(GroupAddress groupAddress) {
         boolean readBoolean = false;
         try {
             readBoolean = processCommunicator.readBool(groupAddress);
         } catch (KNXException e) {
             System.out.println("KNXException, readBooleanFromBus(" + groupAddress + ")");
             e.printStackTrace();
-            throw e;
         }
         return readBoolean;
     }
 
-    public synchronized float readFloatFromBus(GroupAddress groupAddress) throws KNXException {
+    private synchronized float readFloatFromBus(GroupAddress groupAddress) {
         float readFloat = -1;
         try {
             readFloat = processCommunicator.readFloat(groupAddress);
         } catch (KNXException e) {
             System.out.println("KNXException, readFloatFromBus(" + groupAddress + ")");
             e.printStackTrace();
-            throw e;
         }
         return readFloat;
     }
 
-    public synchronized void closeBus() {
+    private synchronized void closeBus() {
+        this.interrupt();
         netLinkIp.close();
     }
 }
