@@ -8,27 +8,33 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.calimero.knx.knxoncalimero.knxobject.KnxBooleanObject;
+
 import tuwien.auto.calimero.GroupAddress;
-import tuwien.auto.calimero.exception.KNXException;
 
 
 public class MainActivity extends Activity {
     public static boolean first = true;
     public static KnxBusConnection testConnection;
-
     KnxBusConnection connectionThread;
+    private Container readContainer, readResultContainer, writeContainer;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         //testConnection = new KnxBusConnection("", "192.168.10.28");
-
+        readContainer = new Container();
+        writeContainer = new Container();
+        readResultContainer = new Container();
+        connectionThread = new KnxBusConnection("192.168.10.0", "192.168.10.28", readContainer, writeContainer, readResultContainer);
+        connectionThread.start();
 
         Button sendButton = (Button) findViewById(R.id.btnSend);
         sendButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
-                testConnection.writeToBus(new GroupAddress(0, 0, 1), true);
+                writeContainer.push(new KnxBooleanObject(new GroupAddress(0, 0, 1), true));
                 TextView textView = (TextView) findViewById(R.id.textView);
                 textView.setText("Bus was written");
             }
@@ -39,8 +45,6 @@ public class MainActivity extends Activity {
         connectButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
-                KnxBusConnection connectionThread = new KnxBusConnection("192.168.10.0", "192.168.10.28");
-                connectionThread.start();
                 /*if (testConnection.initBus("", "192.168.10.28")) {
                     TextView textView = (TextView) findViewById(R.id.tvConnectionStatus);
                     textView.setText("Connected!");
@@ -67,16 +71,16 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 TextView textView = (TextView) findViewById(R.id.tfRcvValue);
+                readContainer.push(new KnxBooleanObject(new GroupAddress(0, 0, 1)));
                 try {
-                    boolean read = testConnection.readBooleanFromBus(new GroupAddress(0, 0, 1));
-                    textView.setText("Read " + read + " from Bus");
-                } catch (KNXException e) {
-                    textView.setText("Exception while reading");
+                    Thread.sleep(1000); //Muss später durch Benachrichtigung wenn gelesen ersetzt werden, damit die ANzeige aktualisiert werden kann
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
+                boolean read = ((KnxBooleanObject) readResultContainer.getByGroupAdress(new GroupAddress(0, 0, 1))).getValue();
+                textView.setText("Read " + read + " from Bus");
             }
         });
-
-
     }
 
 
