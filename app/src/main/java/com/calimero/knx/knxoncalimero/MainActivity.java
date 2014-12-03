@@ -6,6 +6,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.calimero.knx.knxoncalimero.knxobject.KnxBooleanObject;
@@ -17,6 +18,9 @@ public class MainActivity extends Activity {
     public static boolean first = true;
     public static KnxBusConnection testConnection;
     KnxBusConnection connectionThread;
+    //Gui-Elemente
+    EditText tfGatewayIP, tfSendHaupt, tfSendMitte, tfSendSub, tfRcvHaupt, tfRcvMitte, tfRcvSub;
+    Button sendButton, connectButton, readButton;
     private Container readContainer, readResultContainer, writeContainer;
 
     @Override
@@ -27,9 +31,16 @@ public class MainActivity extends Activity {
         readContainer = new Container();
         writeContainer = new Container();
         readResultContainer = new Container();
-        connectionThread = new KnxBusConnection("192.168.10.0", "192.168.10.28", readContainer, writeContainer, readResultContainer);
 
-        Button sendButton = (Button) findViewById(R.id.btnSend);
+        tfGatewayIP = (EditText) findViewById(R.id.tfGatewayIP);
+        tfSendHaupt = (EditText) findViewById(R.id.tfSendHaupt);
+        tfSendMitte = (EditText) findViewById(R.id.tfSendMittel);
+        tfSendSub = (EditText) findViewById(R.id.tfSendSub);
+        tfRcvHaupt = (EditText) findViewById(R.id.tfRcvHaupt);
+        tfRcvMitte = (EditText) findViewById(R.id.tfRcvMittel);
+        tfRcvSub = (EditText) findViewById(R.id.tfRcvSub);
+
+        sendButton = (Button) findViewById(R.id.btnSend);
         sendButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -40,7 +51,7 @@ public class MainActivity extends Activity {
         });
 
 
-        Button connectButton = (Button) findViewById(R.id.btnConnect);
+        connectButton = (Button) findViewById(R.id.btnConnect);
         connectButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -51,6 +62,10 @@ public class MainActivity extends Activity {
                     TextView textView = (TextView) findViewById(R.id.tvConnectionStatus);
                     textView.setText("Cannont open Connection");
                 }*/
+
+                //todo: gateway ip überprüfung
+                //todo: Host Ip dynamisch bestimmen oder Gui element dafür implementieren
+                connectionThread = new KnxBusConnection("192.168.10.0", tfGatewayIP.getText().toString(), readContainer, writeContainer, readResultContainer);
                 connectionThread.start();
             }
         });
@@ -65,7 +80,7 @@ public class MainActivity extends Activity {
             }
         });*/
 
-        Button readButton = (Button) findViewById(R.id.btnReceive);
+        readButton = (Button) findViewById(R.id.btnReceive);
         readButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
