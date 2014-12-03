@@ -128,7 +128,7 @@ public class MainActivity extends Activity implements Observer {
                 boolean read = ((KnxBooleanObject) data).getValue();
                 tfRcvValue.setText("Read " + read + " from Bus");
             }
-        } else if (observable.equals(this)) {
+        } else if (observable.equals(connectionRunnable)) {
             if (connectionRunnable.isConnected()) {
                 tvConnectionStatus.setText("Connected");
             } else {
