@@ -7,7 +7,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 
 import com.calimero.knx.knxoncalimero.knxobject.KnxBooleanObject;
 
@@ -22,8 +21,9 @@ public class MainActivity extends Activity implements Observer {
     //public static KnxBusConnection testConnection;
     KnxBusConnection connectionThread;
     //Gui-Elemente
-    EditText tfGatewayIP, tfSendHaupt, tfSendMitte, tfSendSub, tfRcvHaupt, tfRcvMitte, tfRcvSub;
+    EditText tfGatewayIP, tfSendHaupt, tfSendMitte, tfSendSub, tfRcvHaupt, tfRcvMitte, tfRcvSub, tfRcvValue, tfSendValue;
     Button sendButton, connectButton, readButton;
+    GroupAddress rcvAdress, sendAdress;
     private Container resultContainer, busActionContainer;
 
     @Override
@@ -42,14 +42,17 @@ public class MainActivity extends Activity implements Observer {
         tfRcvHaupt = (EditText) findViewById(R.id.tfRcvHaupt);
         tfRcvMitte = (EditText) findViewById(R.id.tfRcvMittel);
         tfRcvSub = (EditText) findViewById(R.id.tfRcvSub);
+        tfRcvValue = (EditText) findViewById(R.id.tfRcvValue);
+        tfSendValue = (EditText) findViewById(R.id.tfSendValue);
 
         sendButton = (Button) findViewById(R.id.btnSend);
         sendButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
-                busActionContainer.push(new KnxBooleanObject(new GroupAddress(0, 0, 1), true));
-                TextView textView = (TextView) findViewById(R.id.textView);
-                textView.setText("Bus was written");
+                sendAdress = new GroupAddress(Integer.valueOf(tfSendHaupt.getText().toString()),
+                        Integer.valueOf(tfSendMitte.getText().toString()),
+                        Integer.valueOf(tfSendSub.getText().toString()));
+                busActionContainer.push(new KnxBooleanObject(sendAdress, tfSendValue.getText().toString().equals("1")));
             }
         });
 
@@ -58,17 +61,9 @@ public class MainActivity extends Activity implements Observer {
         connectButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
-                /*if (testConnection.initBus("", "192.168.10.28")) {
-                    TextView textView = (TextView) findViewById(R.id.tvConnectionStatus);
-                    textView.setText("Connected!");
-                } else {
-                    TextView textView = (TextView) findViewById(R.id.tvConnectionStatus);
-                    textView.setText("Cannont open Connection");
-                }*/
-
                 //todo: gateway ip überprüfung
                 //todo: Host Ip dynamisch bestimmen oder Gui element dafür implementieren
-                connectionThread = new KnxBusConnection("192.168.10.0", tfGatewayIP.getText().toString(), busActionContainer, resultContainer);
+                connectionThread = new KnxBusConnection("192.168.10.123", tfGatewayIP.getText().toString(), busActionContainer, resultContainer);
                 connectionThread.start();
             }
         });
@@ -87,15 +82,10 @@ public class MainActivity extends Activity implements Observer {
         readButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
-                TextView textView = (TextView) findViewById(R.id.tfRcvValue);
-                busActionContainer.push(new KnxBooleanObject(new GroupAddress(0, 0, 1), true));
-                try {
-                    Thread.sleep(1000); //Muss später durch Benachrichtigung wenn gelesen ersetzt werden, damit die ANzeige aktualisiert werden kann
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                boolean read = ((KnxBooleanObject) resultContainer.getByGroupAddress(new GroupAddress(0, 0, 1), true)).getValue();
-                textView.setText("Read " + read + " from Bus");
+                rcvAdress = new GroupAddress(Integer.valueOf(tfRcvHaupt.getText().toString()),
+                        Integer.valueOf(tfRcvMitte.getText().toString()),
+                        Integer.valueOf(tfRcvSub.getText().toString()));
+                busActionContainer.push(new KnxBooleanObject(rcvAdress, true));
             }
         });
     }
@@ -127,8 +117,9 @@ public class MainActivity extends Activity implements Observer {
     public void update(Observable observable, Object data) {
         System.out.println("Update from MainActivity called");
         if (observable.equals(resultContainer)) {
-            for (Object o : resultContainer.getAll()) {
-                System.out.println(o);
+            if (data instanceof KnxBooleanObject) {
+                boolean read = ((KnxBooleanObject) data).getValue();
+                tfRcvValue.setText("Read " + read + " from Bus");
             }
         }
     }
