@@ -27,6 +27,7 @@ public class KnxBusConnection extends Thread {
     private final Container busActionContainer, resultContainer;
     private KNXNetworkLinkIP netLinkIp = null;
     private ProcessCommunicator processCommunicator;
+    private boolean connected;
 
     public KnxBusConnection(String hostIp, String gatewayIp, Container busActionContainer, Container resultContainer) {
         this.hostIp = hostIp;
@@ -37,14 +38,14 @@ public class KnxBusConnection extends Thread {
 
     @Override
     public void run() {
-        boolean started = initBus(hostIp, gatewayIp);
-        if (started) {
+        connected = initBus(hostIp, gatewayIp);
+        if (connected) {
             System.out.println("Verbindung erfolgreich aufgebaut");
         } else {
             System.out.println("Verbindung konnte nicht aufgebaut werden");
         }
         KnxComparableObject object;
-        while (started && !this.isInterrupted()) {
+        while (connected && !this.isInterrupted()) {
             while (!busActionContainer.isEmpty()) {
                 object = busActionContainer.pop();
                 if (object.isRead()) {
@@ -66,6 +67,7 @@ public class KnxBusConnection extends Thread {
                 }
             }
         }
+        connected = false;
     }
 
     private synchronized boolean initBus(String hostIp, String gatewayIp) {
@@ -130,5 +132,9 @@ public class KnxBusConnection extends Thread {
     private synchronized void closeBus() {
         this.interrupt();
         netLinkIp.close();
+    }
+
+    public synchronized boolean isConnected() {
+        return connected;
     }
 }
