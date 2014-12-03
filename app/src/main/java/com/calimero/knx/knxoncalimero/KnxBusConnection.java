@@ -46,7 +46,7 @@ public class KnxBusConnection extends Thread {
         }
         KnxComparableObject object;
         while (connected && !this.isInterrupted()) {
-            while (!busActionContainer.isEmpty()) {
+            while (!busActionContainer.isEmpty() && netLinkIp.isOpen()) {
                 object = busActionContainer.pop();
                 if (object.isRead()) {
                     if (object instanceof KnxFloatObject) {
@@ -67,7 +67,7 @@ public class KnxBusConnection extends Thread {
                 }
             }
         }
-        connected = false;
+        connected = netLinkIp.isOpen();
     }
 
     private synchronized boolean initBus(String hostIp, String gatewayIp) {
