@@ -142,6 +142,7 @@ public class KnxBusConnection extends Observable implements Runnable {
         if (connected != this.connected) {
             this.setChanged();
         }
+        System.out.println("setConnected: " + connected);
         this.connected = connected;
         this.notifyObservers();
     }

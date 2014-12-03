@@ -125,15 +125,27 @@ public class MainActivity extends Activity implements Observer {
         System.out.println("Update from MainActivity called:" + observable);
         if (observable.equals(resultContainer)) {
             if (data instanceof KnxBooleanObject) {
-                boolean read = ((KnxBooleanObject) data).getValue();
-                tfRcvValue.setText("Read " + read + " from Bus");
+                final boolean read = ((KnxBooleanObject) data).getValue();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        System.out.println("RunOnUiThread Run runned");
+                        tfRcvValue.setText("Read " + read + " from Bus");
+                    }
+                });
             }
         } else if (observable.equals(connectionRunnable)) {
-            if (connectionRunnable.isConnected()) {
-                tvConnectionStatus.setText("Connected");
-            } else {
-                tvConnectionStatus.setText("Connection Error");
-            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println("RunOnUiThread Run runned");
+                    if (connectionRunnable.isConnected()) {
+                        tvConnectionStatus.setText("Connected");
+                    } else {
+                        tvConnectionStatus.setText("Connection Error");
+                    }
+                }
+            });
         }
     }
 }
