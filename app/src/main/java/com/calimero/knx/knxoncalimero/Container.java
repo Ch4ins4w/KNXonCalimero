@@ -14,12 +14,12 @@ public class Container {
         int index = objects.indexOf(object);
         if (index == -1) {
             objects.add(object);
-            System.out.println("Added: " + object);
+            System.out.println("Push: Added: " + object);
         } else {
             if (object.compareTo(objects.get(index)) == 1) {
-                System.out.println("Removed: " + objects.remove(index));
+                System.out.println("Push: Removed: " + objects.remove(index));
                 objects.add(object);
-                System.out.println("Added: " + object);
+                System.out.println("Push: Added: " + object);
             }
         }
         notifyAll();
@@ -33,13 +33,15 @@ public class Container {
             }
         }
         KnxComparableObject object = objects.remove(0);
+        System.out.println("Pop: Removed: " + object);
         notifyAll();
         return object;
     }
 
-    public synchronized KnxComparableObject getByGroupAdress(GroupAddress groupAddress) {
+    public synchronized KnxComparableObject getByGroupAddress(GroupAddress groupAddress) {
         int objectInd = objects.indexOf(new KnxComparableObject(groupAddress));
         KnxComparableObject object = objects.get(objectInd);
+        System.out.println("GetByGroupAddress: Return: " + object);
         notifyAll();
         return object;
     }

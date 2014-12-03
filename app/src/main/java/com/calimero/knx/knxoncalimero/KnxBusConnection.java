@@ -44,6 +44,7 @@ public class KnxBusConnection extends Thread {
             while (!writeContainer.isEmpty()) {
                 object = writeContainer.pop();
                 if (object instanceof KnxBooleanObject) {
+                    System.out.println("Writing Boolean to Bus: " + object);
                     writeBooleanToBus(object.getGroupAddress(), ((KnxBooleanObject) object).getValue());
                 }
             }
@@ -51,9 +52,11 @@ public class KnxBusConnection extends Thread {
             while (!readContainer.isEmpty()) {
                 object = readContainer.pop();
                 if (object instanceof KnxFloatObject) {
+                    System.out.println("Reading Float from Bus: " + object);
                     float read = readFloatFromBus(object.getGroupAddress());
                     ((KnxFloatObject) object).setValue(read);
                 } else if (object instanceof KnxBooleanObject) {
+                    System.out.println("Reading Boolean from Bus: " + object);
                     boolean read = readBooleanFromBus(object.getGroupAddress());
                     ((KnxBooleanObject) object).setValue(read);
                 }

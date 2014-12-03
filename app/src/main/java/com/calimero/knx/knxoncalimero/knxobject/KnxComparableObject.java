@@ -37,5 +37,10 @@ public class KnxComparableObject implements Comparable<KnxComparableObject> {
     public GroupAddress getGroupAddress() {
         return groupAddress;
     }
+
+    @Override
+    public String toString() {
+        return "Date: " + createDate + " GroupAddress: " + groupAddress;
+    }
 }
 

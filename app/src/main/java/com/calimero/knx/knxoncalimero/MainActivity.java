@@ -77,7 +77,7 @@ public class MainActivity extends Activity {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                boolean read = ((KnxBooleanObject) readResultContainer.getByGroupAdress(new GroupAddress(0, 0, 1))).getValue();
+                boolean read = ((KnxBooleanObject) readResultContainer.getByGroupAddress(new GroupAddress(0, 0, 1))).getValue();
                 textView.setText("Read " + read + " from Bus");
             }
         });

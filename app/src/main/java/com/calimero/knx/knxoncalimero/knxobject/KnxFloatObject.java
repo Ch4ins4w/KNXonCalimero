@@ -24,4 +24,9 @@ public class KnxFloatObject extends KnxComparableObject {
     public void setValue(float value) {
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        return super.toString() + " Value: " + value;
+    }
 }
