@@ -8,10 +8,12 @@ import tuwien.auto.calimero.GroupAddress;
 public class KnxComparableObject implements Comparable<KnxComparableObject> {
     private final Date createDate;
     private final GroupAddress groupAddress;
+    private final boolean read;
 
-    public KnxComparableObject(GroupAddress groupAddress) {
+    public KnxComparableObject(GroupAddress groupAddress, boolean read) {
         this.createDate = new Date();
         this.groupAddress = groupAddress;
+        this.read = read;
     }
 
     @Override
@@ -27,7 +29,7 @@ public class KnxComparableObject implements Comparable<KnxComparableObject> {
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof KnxComparableObject && ((KnxComparableObject) o).groupAddress.equals(this.groupAddress);
+        return o instanceof KnxComparableObject && ((KnxComparableObject) o).groupAddress.equals(this.groupAddress) && ((KnxComparableObject) o).isRead() == this.isRead();
     }
 
     public Date getCreateDate() {
@@ -38,9 +40,13 @@ public class KnxComparableObject implements Comparable<KnxComparableObject> {
         return groupAddress;
     }
 
+    public boolean isRead() {
+        return read;
+    }
+
     @Override
     public String toString() {
-        return "Date: " + createDate + " GroupAddress: " + groupAddress;
+        return "Date: " + createDate + " GroupAddress: " + groupAddress + " isRead: " + read;
     }
 }
 

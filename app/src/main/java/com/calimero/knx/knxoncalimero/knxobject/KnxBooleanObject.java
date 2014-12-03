@@ -8,12 +8,12 @@ import tuwien.auto.calimero.GroupAddress;
 public class KnxBooleanObject extends KnxComparableObject {
     private boolean value;
 
-    public KnxBooleanObject(GroupAddress groupAddress) {
-        super(groupAddress);
+    public KnxBooleanObject(GroupAddress groupAddress, boolean read) {
+        super(groupAddress, read);
     }
 
-    public KnxBooleanObject(GroupAddress groupAddress, boolean value) {
-        super(groupAddress);
+    public KnxBooleanObject(GroupAddress groupAddress, boolean value, boolean read) {
+        super(groupAddress, read);
         this.value = value;
     }
 

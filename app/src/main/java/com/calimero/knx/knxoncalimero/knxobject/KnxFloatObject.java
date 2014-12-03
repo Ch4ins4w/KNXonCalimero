@@ -8,12 +8,12 @@ import tuwien.auto.calimero.GroupAddress;
 public class KnxFloatObject extends KnxComparableObject {
     private float value;
 
-    public KnxFloatObject(GroupAddress groupAddress) {
-        super(groupAddress);
+    public KnxFloatObject(GroupAddress groupAddress, boolean read) {
+        super(groupAddress, read);
     }
 
-    public KnxFloatObject(GroupAddress groupAddress, float value) {
-        super(groupAddress);
+    public KnxFloatObject(GroupAddress groupAddress, float value, boolean read) {
+        super(groupAddress, read);
         this.value = value;
     }
 

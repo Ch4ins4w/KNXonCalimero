@@ -24,16 +24,15 @@ public class KnxBusConnection extends Thread {
 
     private final String gatewayIp;
     private final String hostIp;
-    private final Container writeContainer, readContainer, readResultContainer;
+    private final Container busActionContainer, resultContainer;
     private KNXNetworkLinkIP netLinkIp = null;
     private ProcessCommunicator processCommunicator;
 
-    public KnxBusConnection(String hostIp, String gatewayIp, Container readContainer, Container writeContainer, Container readResultContainer) {
+    public KnxBusConnection(String hostIp, String gatewayIp, Container busActionContainer, Container resultContainer) {
         this.hostIp = hostIp;
         this.gatewayIp = gatewayIp;
-        this.writeContainer = writeContainer;
-        this.readContainer = readContainer;
-        this.readResultContainer = readResultContainer;
+        this.busActionContainer = busActionContainer;
+        this.resultContainer = resultContainer;
     }
 
     @Override
@@ -41,26 +40,25 @@ public class KnxBusConnection extends Thread {
         boolean started = initBus(hostIp, gatewayIp);
         KnxComparableObject object;
         while (started && !this.isInterrupted()) {
-            while (!writeContainer.isEmpty()) {
-                object = writeContainer.pop();
-                if (object instanceof KnxBooleanObject) {
-                    System.out.println("Writing Boolean to Bus: " + object);
-                    writeBooleanToBus(object.getGroupAddress(), ((KnxBooleanObject) object).getValue());
+            while (!busActionContainer.isEmpty()) {
+                object = busActionContainer.pop();
+                if (object.isRead()) {
+                    if (object instanceof KnxFloatObject) {
+                        System.out.println("Reading Float from Bus: " + object);
+                        float read = readFloatFromBus(object.getGroupAddress());
+                        ((KnxFloatObject) object).setValue(read);
+                    } else if (object instanceof KnxBooleanObject) {
+                        System.out.println("Reading Boolean from Bus: " + object);
+                        boolean read = readBooleanFromBus(object.getGroupAddress());
+                        ((KnxBooleanObject) object).setValue(read);
+                    }
+                    resultContainer.push(object);
+                } else {
+                    if (object instanceof KnxBooleanObject) {
+                        System.out.println("Writing Boolean to Bus: " + object);
+                        writeBooleanToBus(object.getGroupAddress(), ((KnxBooleanObject) object).getValue());
+                    }
                 }
-            }
-
-            while (!readContainer.isEmpty()) {
-                object = readContainer.pop();
-                if (object instanceof KnxFloatObject) {
-                    System.out.println("Reading Float from Bus: " + object);
-                    float read = readFloatFromBus(object.getGroupAddress());
-                    ((KnxFloatObject) object).setValue(read);
-                } else if (object instanceof KnxBooleanObject) {
-                    System.out.println("Reading Boolean from Bus: " + object);
-                    boolean read = readBooleanFromBus(object.getGroupAddress());
-                    ((KnxBooleanObject) object).setValue(read);
-                }
-                readResultContainer.push(object);
             }
         }
     }

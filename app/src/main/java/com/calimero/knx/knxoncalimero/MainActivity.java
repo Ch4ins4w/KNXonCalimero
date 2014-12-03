@@ -21,16 +21,15 @@ public class MainActivity extends Activity {
     //Gui-Elemente
     EditText tfGatewayIP, tfSendHaupt, tfSendMitte, tfSendSub, tfRcvHaupt, tfRcvMitte, tfRcvSub;
     Button sendButton, connectButton, readButton;
-    private Container readContainer, readResultContainer, writeContainer;
+    private Container resultContainer, busActionContainer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         //testConnection = new KnxBusConnection("", "192.168.10.28");
-        readContainer = new Container();
-        writeContainer = new Container();
-        readResultContainer = new Container();
+        busActionContainer = new Container();
+        resultContainer = new Container();
 
         tfGatewayIP = (EditText) findViewById(R.id.tfGatewayIP);
         tfSendHaupt = (EditText) findViewById(R.id.tfSendHaupt);
@@ -44,7 +43,7 @@ public class MainActivity extends Activity {
         sendButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
-                writeContainer.push(new KnxBooleanObject(new GroupAddress(0, 0, 1), true));
+                busActionContainer.push(new KnxBooleanObject(new GroupAddress(0, 0, 1), true));
                 TextView textView = (TextView) findViewById(R.id.textView);
                 textView.setText("Bus was written");
             }
@@ -65,7 +64,7 @@ public class MainActivity extends Activity {
 
                 //todo: gateway ip überprüfung
                 //todo: Host Ip dynamisch bestimmen oder Gui element dafür implementieren
-                connectionThread = new KnxBusConnection("192.168.10.0", tfGatewayIP.getText().toString(), readContainer, writeContainer, readResultContainer);
+                connectionThread = new KnxBusConnection("192.168.10.0", tfGatewayIP.getText().toString(), busActionContainer, resultContainer);
                 connectionThread.start();
             }
         });
@@ -85,13 +84,13 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 TextView textView = (TextView) findViewById(R.id.tfRcvValue);
-                readContainer.push(new KnxBooleanObject(new GroupAddress(0, 0, 1)));
+                busActionContainer.push(new KnxBooleanObject(new GroupAddress(0, 0, 1), true));
                 try {
                     Thread.sleep(1000); //Muss später durch Benachrichtigung wenn gelesen ersetzt werden, damit die ANzeige aktualisiert werden kann
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                boolean read = ((KnxBooleanObject) readResultContainer.getByGroupAddress(new GroupAddress(0, 0, 1))).getValue();
+                boolean read = ((KnxBooleanObject) resultContainer.getByGroupAddress(new GroupAddress(0, 0, 1), true)).getValue();
                 textView.setText("Read " + read + " from Bus");
             }
         });
