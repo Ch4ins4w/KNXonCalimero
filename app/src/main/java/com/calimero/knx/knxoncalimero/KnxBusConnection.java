@@ -68,7 +68,7 @@ public class KnxBusConnection extends Observable implements Runnable {
                 }
             }
         }
-        setConnected(netLinkIp.isOpen());
+        setConnected(netLinkIp != null && netLinkIp.isOpen());
     }
 
     private synchronized boolean initBus(String hostIp, String gatewayIp) {
