@@ -4,10 +4,11 @@ import com.calimero.knx.knxoncalimero.knxobject.KnxComparableObject;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Observable;
 
 import tuwien.auto.calimero.GroupAddress;
 
-public class Container {
+public class Container extends Observable {
     private List<KnxComparableObject> objects = new LinkedList<KnxComparableObject>();
 
     public synchronized void push(KnxComparableObject object) {
@@ -15,11 +16,16 @@ public class Container {
         if (index == -1) {
             objects.add(object);
             System.out.println("Push: Added: " + object);
+            setChanged();
+            notifyObservers();
         } else {
             if (object.compareTo(objects.get(index)) == 1) {
-                System.out.println("Push: Removed: " + objects.remove(index));
+                KnxComparableObject removedObject = objects.remove(index);
+                System.out.println("Push: Removed: " + removedObject);
                 objects.add(object);
                 System.out.println("Push: Added: " + object);
+                setChanged();
+                notifyObservers();
             }
         }
         notifyAll();
