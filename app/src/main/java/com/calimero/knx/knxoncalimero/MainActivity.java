@@ -11,12 +11,15 @@ import android.widget.TextView;
 
 import com.calimero.knx.knxoncalimero.knxobject.KnxBooleanObject;
 
+import java.util.Observable;
+import java.util.Observer;
+
 import tuwien.auto.calimero.GroupAddress;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements Observer {
     public static boolean first = true;
-    public static KnxBusConnection testConnection;
+    //public static KnxBusConnection testConnection;
     KnxBusConnection connectionThread;
     //Gui-Elemente
     EditText tfGatewayIP, tfSendHaupt, tfSendMitte, tfSendSub, tfRcvHaupt, tfRcvMitte, tfRcvSub;
@@ -30,6 +33,7 @@ public class MainActivity extends Activity {
         //testConnection = new KnxBusConnection("", "192.168.10.28");
         busActionContainer = new Container();
         resultContainer = new Container();
+        resultContainer.addObserver(this);
 
         tfGatewayIP = (EditText) findViewById(R.id.tfGatewayIP);
         tfSendHaupt = (EditText) findViewById(R.id.tfSendHaupt);
@@ -117,5 +121,15 @@ public class MainActivity extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void update(Observable observable, Object data) {
+        System.out.println("Update from MainActivity called");
+        if (observable.equals(resultContainer)) {
+            for (Object o : resultContainer.getAll()) {
+                System.out.println(o);
+            }
+        }
     }
 }

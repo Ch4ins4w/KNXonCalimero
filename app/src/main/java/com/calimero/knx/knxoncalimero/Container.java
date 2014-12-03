@@ -44,6 +44,10 @@ public class Container extends Observable {
         return object;
     }
 
+    public synchronized Object[] getAll() {
+        return objects.toArray();
+    }
+
     public synchronized KnxComparableObject getByGroupAddress(GroupAddress groupAddress, boolean read) {
         int objectInd = objects.indexOf(new KnxComparableObject(groupAddress, read));
         KnxComparableObject object = objects.get(objectInd);
