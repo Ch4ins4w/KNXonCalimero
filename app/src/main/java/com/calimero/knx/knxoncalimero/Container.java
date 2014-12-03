@@ -17,7 +17,7 @@ public class Container extends Observable {
             objects.add(object);
             System.out.println("Push: Added: " + object);
             setChanged();
-            notifyObservers();
+            notifyObservers(object);
         } else {
             if (object.compareTo(objects.get(index)) == 1) {
                 KnxComparableObject removedObject = objects.remove(index);
@@ -25,7 +25,7 @@ public class Container extends Observable {
                 objects.add(object);
                 System.out.println("Push: Added: " + object);
                 setChanged();
-                notifyObservers();
+                notifyObservers(object);
             }
         }
         notifyAll();
