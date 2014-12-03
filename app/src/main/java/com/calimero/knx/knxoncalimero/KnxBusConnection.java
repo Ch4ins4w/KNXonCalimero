@@ -38,6 +38,11 @@ public class KnxBusConnection extends Thread {
     @Override
     public void run() {
         boolean started = initBus(hostIp, gatewayIp);
+        if (started) {
+            System.out.println("Verbindung erfolgreich aufgebaut");
+        } else {
+            System.out.println("Verbindung konnte nicht aufgebaut werden");
+        }
         KnxComparableObject object;
         while (started && !this.isInterrupted()) {
             while (!busActionContainer.isEmpty()) {
