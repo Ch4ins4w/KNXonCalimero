@@ -28,7 +28,6 @@ public class MainActivity extends Activity {
         writeContainer = new Container();
         readResultContainer = new Container();
         connectionThread = new KnxBusConnection("192.168.10.0", "192.168.10.28", readContainer, writeContainer, readResultContainer);
-        connectionThread.start();
 
         Button sendButton = (Button) findViewById(R.id.btnSend);
         sendButton.setOnClickListener(new Button.OnClickListener() {
@@ -52,7 +51,7 @@ public class MainActivity extends Activity {
                     TextView textView = (TextView) findViewById(R.id.tvConnectionStatus);
                     textView.setText("Cannont open Connection");
                 }*/
-
+                connectionThread.start();
             }
         });
 

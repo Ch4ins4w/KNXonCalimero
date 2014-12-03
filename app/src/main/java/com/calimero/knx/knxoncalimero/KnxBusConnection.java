@@ -68,7 +68,7 @@ public class KnxBusConnection extends Thread {
     private synchronized boolean initBus(String hostIp, String gatewayIp) {
         boolean result = false;
         try {
-            netLinkIp = new KNXNetworkLinkIP(KNXNetworkLinkIP.TUNNEL, new InetSocketAddress(InetAddress.getByName(null), 0), new InetSocketAddress(InetAddress.getByName(gatewayIp), KNXnetIPConnection.IP_PORT), false, new TPSettings(false));
+            netLinkIp = new KNXNetworkLinkIP(KNXNetworkLinkIP.TUNNEL, new InetSocketAddress(InetAddress.getByName(hostIp), 0), new InetSocketAddress(InetAddress.getByName(gatewayIp), KNXnetIPConnection.IP_PORT), false, new TPSettings(false));
             processCommunicator = new ProcessCommunicatorImpl(netLinkIp);
             result = true;
         } catch (KNXLinkClosedException e) {
