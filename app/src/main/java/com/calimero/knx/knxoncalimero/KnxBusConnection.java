@@ -8,6 +8,7 @@ import com.calimero.knx.knxoncalimero.knxobject.KnxFloatObject;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Observable;
 
 import tuwien.auto.calimero.GroupAddress;
 import tuwien.auto.calimero.exception.KNXException;
@@ -20,7 +21,7 @@ import tuwien.auto.calimero.link.medium.TPSettings;
 import tuwien.auto.calimero.process.ProcessCommunicator;
 import tuwien.auto.calimero.process.ProcessCommunicatorImpl;
 
-public class KnxBusConnection extends Thread {
+public class KnxBusConnection extends Observable implements Runnable {
 
     private final String gatewayIp;
     private final String hostIp;
@@ -38,14 +39,14 @@ public class KnxBusConnection extends Thread {
 
     @Override
     public void run() {
-        connected = initBus(hostIp, gatewayIp);
+        setConnected(initBus(hostIp, gatewayIp));
         if (connected) {
             System.out.println("Verbindung erfolgreich aufgebaut");
         } else {
             System.out.println("Verbindung konnte nicht aufgebaut werden");
         }
         KnxComparableObject object;
-        while (connected && !this.isInterrupted()) {
+        while (connected) {
             while (!busActionContainer.isEmpty() && netLinkIp.isOpen()) {
                 object = busActionContainer.pop();
                 if (object.isRead()) {
@@ -67,7 +68,7 @@ public class KnxBusConnection extends Thread {
                 }
             }
         }
-        connected = netLinkIp.isOpen();
+        setConnected(netLinkIp.isOpen());
     }
 
     private synchronized boolean initBus(String hostIp, String gatewayIp) {
@@ -130,11 +131,18 @@ public class KnxBusConnection extends Thread {
     }
 
     private synchronized void closeBus() {
-        this.interrupt();
         netLinkIp.close();
     }
 
     public synchronized boolean isConnected() {
         return connected;
+    }
+
+    private void setConnected(boolean connected) {
+        if (connected != this.connected) {
+            this.setChanged();
+        }
+        this.connected = connected;
+        this.notifyObservers();
     }
 }
