@@ -39,36 +39,34 @@ public class KnxBusConnection extends Observable implements Runnable {
 
     @Override
     public void run() {
-        setConnected(initBus(hostIp , gatewayIp));
-        if (connected) {
+        initBus(hostIp, gatewayIp);
+        if (isConnected()) {
             System.out.println("Verbindung erfolgreich aufgebaut");
         } else {
             System.out.println("Verbindung konnte nicht aufgebaut werden");
         }
         KnxComparableObject object;
-        while (connected) {
-            while (!busActionContainer.isEmpty() && netLinkIp.isOpen()) {
-                object = busActionContainer.pop();
-                if (object.isRead()) {
-                    if (object instanceof KnxFloatObject) {
-                        System.out.println("Reading Float from Bus: " + object);
-                        float read = readFloatFromBus(object.getGroupAddress());
-                        ((KnxFloatObject) object).setValue(read);
-                    } else if (object instanceof KnxBooleanObject) {
-                        System.out.println("Reading Boolean from Bus: " + object);
-                        boolean read = readBooleanFromBus(object.getGroupAddress());
-                        ((KnxBooleanObject) object).setValue(read);
-                    }
-                    resultContainer.push(object);
-                } else {
-                    if (object instanceof KnxBooleanObject) {
-                        System.out.println("Writing Boolean to Bus: " + object);
-                        writeBooleanToBus(object.getGroupAddress(), ((KnxBooleanObject) object).getValue());
-                    }
+        while (isConnected()) {
+            object = busActionContainer.pop();
+            if (object.isRead()) {
+                if (object instanceof KnxFloatObject) {
+                    System.out.println("Reading Float from Bus: " + object);
+                    float read = readFloatFromBus(object.getGroupAddress());
+                    ((KnxFloatObject) object).setValue(read);
+                } else if (object instanceof KnxBooleanObject) {
+                    System.out.println("Reading Boolean from Bus: " + object);
+                    boolean read = readBooleanFromBus(object.getGroupAddress());
+                    ((KnxBooleanObject) object).setValue(read);
+                }
+                resultContainer.push(object);
+            } else {
+                if (object instanceof KnxBooleanObject) {
+                    System.out.println("Writing Boolean to Bus: " + object);
+                    writeBooleanToBus(object.getGroupAddress(), ((KnxBooleanObject) object).getValue());
                 }
             }
         }
-        setConnected(netLinkIp != null && netLinkIp.isOpen());
+        closeBus();
     }
 
     private synchronized boolean initBus(String hostIp, String gatewayIp) {
@@ -131,11 +129,20 @@ public class KnxBusConnection extends Observable implements Runnable {
     }
 
     private synchronized void closeBus() {
-        netLinkIp.close();
+        if (netLinkIp != null) {
+            netLinkIp.close();
+            netLinkIp = null;
+        }
+        setConnected(false);
     }
 
     public synchronized boolean isConnected() {
-        return connected;
+        boolean returnVal = false;
+        if (netLinkIp != null) {
+            returnVal = netLinkIp.isOpen();
+        }
+        setConnected(returnVal);
+        return returnVal;
     }
 
     private void setConnected(boolean connected) {

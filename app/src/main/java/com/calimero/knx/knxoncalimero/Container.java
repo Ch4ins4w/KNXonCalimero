@@ -2,6 +2,7 @@ package com.calimero.knx.knxoncalimero;
 
 import com.calimero.knx.knxoncalimero.knxobject.KnxComparableObject;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Observable;
@@ -16,6 +17,7 @@ public class Container extends Observable {
         if (index == -1) {
             objects.add(object);
             System.out.println("Push: Added: " + object);
+            Collections.sort(objects);
             setChanged();
             notifyObservers(object);
         } else {
@@ -24,6 +26,7 @@ public class Container extends Observable {
                 System.out.println("Push: Removed: " + removedObject);
                 objects.add(object);
                 System.out.println("Push: Added: " + object);
+                Collections.sort(objects);
                 setChanged();
                 notifyObservers(object);
             }
