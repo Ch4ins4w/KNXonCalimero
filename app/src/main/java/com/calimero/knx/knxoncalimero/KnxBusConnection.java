@@ -39,7 +39,7 @@ public class KnxBusConnection extends Observable implements Runnable {
 
     @Override
     public void run() {
-        setConnected(initBus(hostIp, gatewayIp));
+        setConnected(initBus(hostIp , gatewayIp));
         if (connected) {
             System.out.println("Verbindung erfolgreich aufgebaut");
         } else {
