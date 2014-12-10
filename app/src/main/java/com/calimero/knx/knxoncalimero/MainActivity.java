@@ -66,13 +66,8 @@ public class MainActivity extends Activity implements Observer {
                 //todo: gateway ip überprüfung
                 //todo: Host Ip dynamisch bestimmen oder Gui element dafür implementieren
                 try {
-                    knxComObj = new KnxCommunicationObject("192.168.10.123",tfGatewayIP.getText().toString());
-                    if (knxComObj.isConnected()){
-                        knxComObj.addObserver(thisMainActivity);
-                    }
-                    else {
-
-                    }
+                    knxComObj = KnxCommunicationObject.getInstance("192.168.10.180",tfGatewayIP.getText().toString());
+                    knxComObj.addObserver(thisMainActivity);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
