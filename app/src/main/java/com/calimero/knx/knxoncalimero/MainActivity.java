@@ -10,6 +10,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.calimero.knx.knxoncalimero.knxobject.KnxBooleanObject;
+import com.calimero.knx.knxoncalimero.knxobject.KnxComparableObject;
 
 import java.util.Observable;
 import java.util.Observer;
@@ -20,14 +21,13 @@ import tuwien.auto.calimero.GroupAddress;
 public class MainActivity extends Activity implements Observer {
     public static boolean first = true;
     //public static KnxBusConnection testConnection;
-    KnxBusConnection connectionRunnable;
     //Gui-Elemente
     EditText tfGatewayIP, tfSendHaupt, tfSendMitte, tfSendSub, tfRcvHaupt, tfRcvMitte, tfRcvSub, tfRcvValue, tfSendValue;
     TextView tvConnectionStatus;
     Button sendButton, connectButton, readButton;
     GroupAddress rcvAdress, sendAdress;
     MainActivity thisMainActivity;
-    private Container resultContainer, busActionContainer;
+    private KnxCommunicationObject knxComObj;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,9 +35,6 @@ public class MainActivity extends Activity implements Observer {
         setContentView(R.layout.activity_main);
         thisMainActivity = this;
         //testConnection = new KnxBusConnection("", "192.168.10.28");
-        busActionContainer = new Container();
-        resultContainer = new Container();
-        resultContainer.addObserver(this);
 
         tfGatewayIP = (EditText) findViewById(R.id.tfGatewayIP);
         tfSendHaupt = (EditText) findViewById(R.id.tfSendHaupt);
@@ -57,7 +54,7 @@ public class MainActivity extends Activity implements Observer {
                 sendAdress = new GroupAddress(Integer.valueOf(tfSendHaupt.getText().toString()),
                         Integer.valueOf(tfSendMitte.getText().toString()),
                         Integer.valueOf(tfSendSub.getText().toString()));
-                busActionContainer.push(new KnxBooleanObject(sendAdress, tfSendValue.getText().toString().equals("1"), false));
+                knxComObj.writeBooleanToBus(sendAdress,tfSendValue.getText().toString().equals("1"));
             }
         });
 
@@ -68,10 +65,17 @@ public class MainActivity extends Activity implements Observer {
             public void onClick(View view) {
                 //todo: gateway ip überprüfung
                 //todo: Host Ip dynamisch bestimmen oder Gui element dafür implementieren
-                connectionRunnable = new KnxBusConnection("192.168.10.123", tfGatewayIP.getText().toString(), busActionContainer, resultContainer);
-                connectionRunnable.addObserver(thisMainActivity);
-                Thread connectionThread = new Thread(connectionRunnable);
-                connectionThread.start();
+                try {
+                    knxComObj = new KnxCommunicationObject("192.168.10.123",tfGatewayIP.getText().toString());
+                    if (knxComObj.isConnected()){
+                        knxComObj.addObserver(thisMainActivity);
+                    }
+                    else {
+
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -92,7 +96,7 @@ public class MainActivity extends Activity implements Observer {
                 rcvAdress = new GroupAddress(Integer.valueOf(tfRcvHaupt.getText().toString()),
                         Integer.valueOf(tfRcvMitte.getText().toString()),
                         Integer.valueOf(tfRcvSub.getText().toString()));
-                busActionContainer.push(new KnxBooleanObject(rcvAdress, true));
+                knxComObj.readBoolean(rcvAdress);
             }
         });
     }
@@ -122,8 +126,9 @@ public class MainActivity extends Activity implements Observer {
 
     @Override
     public void update(Observable observable, Object data) {
-        System.out.println("Update from MainActivity called:" + observable);
-        if (observable.equals(resultContainer)) {
+        System.out.println("Update from MainActivity called by: " + observable);
+        System.out.println("with data: " + observable);
+        if (data instanceof KnxComparableObject) {
             if (data instanceof KnxBooleanObject) {
                 final boolean read = ((KnxBooleanObject) data).getValue();
                 runOnUiThread(new Runnable() {
@@ -134,12 +139,12 @@ public class MainActivity extends Activity implements Observer {
                     }
                 });
             }
-        } else if (observable.equals(connectionRunnable)) {
+        } else if (knxComObj != null) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     System.out.println("RunOnUiThread Run runned");
-                    if (connectionRunnable.isConnected()) {
+                    if (knxComObj.isConnected()) {
                         tvConnectionStatus.setText("Connected");
                     } else {
                         tvConnectionStatus.setText("Connection Error");

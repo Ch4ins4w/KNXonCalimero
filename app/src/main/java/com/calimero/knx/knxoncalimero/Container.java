@@ -53,8 +53,13 @@ public class Container extends Observable {
 
     public synchronized KnxComparableObject getByGroupAddress(GroupAddress groupAddress, boolean read) {
         int objectInd = objects.indexOf(new KnxComparableObject(groupAddress, read));
-        KnxComparableObject object = objects.get(objectInd);
-        System.out.println("GetByGroupAddress: Return: " + object);
+        KnxComparableObject object;
+        if (objectInd != -1) {
+            object = objects.get(objectInd);
+            System.out.println("GetByGroupAddress: Return: " + object);
+        } else {
+            object = null;
+        }
         notifyAll();
         return object;
     }
