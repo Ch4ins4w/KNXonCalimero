@@ -2,6 +2,7 @@ package com.calimero.knx.knxoncalimero;
 
 import com.calimero.knx.knxoncalimero.knxobject.KnxBooleanObject;
 import com.calimero.knx.knxoncalimero.knxobject.KnxComparableObject;
+import com.calimero.knx.knxoncalimero.knxobject.KnxControlObject;
 import com.calimero.knx.knxoncalimero.knxobject.KnxFloatObject;
 
 import java.util.Iterator;
@@ -11,6 +12,7 @@ import java.util.Observable;
 import java.util.Observer;
 
 import tuwien.auto.calimero.GroupAddress;
+import tuwien.auto.calimero.knxnetip.KNXnetIPConnection;
 
 /**
  * Created by gerritwolff on 08.12.14.
@@ -20,6 +22,7 @@ public class KnxCommunicationObject extends Observable implements Observer {
     private final Container taskContainer;
     private final Container resultContainer;
     private String hostIp, gatewayIp;
+    private int port;
 
     private final static List<KnxCommunicationObject> communicationObjects = new LinkedList<KnxCommunicationObject>();
 
@@ -29,12 +32,13 @@ public class KnxCommunicationObject extends Observable implements Observer {
         resultContainer = null;
     }
 
-    private KnxCommunicationObject(String hostIp, String gatewayIp) throws Exception {
+    private KnxCommunicationObject(String hostIp, String gatewayIp, int port) throws Exception {
         this.hostIp = hostIp;
         this.gatewayIp = gatewayIp;
+        this.port = port;
         taskContainer = new Container();
         resultContainer = new Container();
-        knxBusConnection = new KnxBusConnection(hostIp, gatewayIp, taskContainer, resultContainer);
+        knxBusConnection = new KnxBusConnection(this.hostIp, this.gatewayIp, this.port, taskContainer, resultContainer);
         resultContainer.addObserver(this);
         knxBusConnection.addObserver(this);
         Thread knxBusConnectionThread = new Thread(knxBusConnection);
@@ -69,6 +73,16 @@ public class KnxCommunicationObject extends Observable implements Observer {
         }
     }
 
+    public byte readControl(GroupAddress groupAddress) {
+        taskContainer.push(new KnxControlObject(groupAddress, true));
+        KnxComparableObject knxControl = resultContainer.getByGroupAddress(groupAddress, true);
+        if (knxControl != null && knxControl instanceof KnxControlObject) {
+            return ((KnxControlObject) knxControl).getValue();
+        } else {
+            return -1;
+        }
+    }
+
     public boolean isConnected() {
         return knxBusConnection.isConnected();
     }
@@ -80,12 +94,16 @@ public class KnxCommunicationObject extends Observable implements Observer {
     }
 
     public static KnxCommunicationObject getInstance(String hostIp, String gatewayIp) {
+        return getInstance(hostIp, gatewayIp, KNXnetIPConnection.IP_PORT);
+    }
+
+    public static KnxCommunicationObject getInstance(String hostIp, String gatewayIp, int port) {
         Iterator<KnxCommunicationObject> iterator = communicationObjects.iterator();
         KnxCommunicationObject knxComObj;
         while (iterator.hasNext()) {
             knxComObj = iterator.next();
             if (knxComObj.hostIp.equals(hostIp) &&
-                    knxComObj.gatewayIp.equals(gatewayIp)) {
+                    knxComObj.gatewayIp.equals(gatewayIp) && knxComObj.port == port) {
                 if (knxComObj.isConnected()) {
                     return knxComObj;
                 } else {
@@ -95,7 +113,7 @@ public class KnxCommunicationObject extends Observable implements Observer {
             }
         }
         try {
-            knxComObj = new KnxCommunicationObject(hostIp, gatewayIp);
+            knxComObj = new KnxCommunicationObject(hostIp, gatewayIp, port);
             communicationObjects.add(knxComObj);
         } catch (Exception e) {
             e.printStackTrace();

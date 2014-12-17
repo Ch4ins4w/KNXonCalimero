@@ -11,6 +11,8 @@ import android.widget.TextView;
 
 import com.calimero.knx.knxoncalimero.knxobject.KnxBooleanObject;
 import com.calimero.knx.knxoncalimero.knxobject.KnxComparableObject;
+import com.calimero.knx.knxoncalimero.knxobject.KnxControlObject;
+import com.calimero.knx.knxoncalimero.knxobject.KnxFloatObject;
 
 import java.util.Observable;
 import java.util.Observer;
@@ -126,6 +128,24 @@ public class MainActivity extends Activity implements Observer {
         if (data instanceof KnxComparableObject) {
             if (data instanceof KnxBooleanObject) {
                 final boolean read = ((KnxBooleanObject) data).getValue();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        System.out.println("RunOnUiThread Run runned");
+                        tfRcvValue.setText("Read " + read + " from Bus");
+                    }
+                });
+            } else if (data instanceof KnxBooleanObject){
+                final float read = ((KnxFloatObject) data).getValue();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        System.out.println("RunOnUiThread Run runned");
+                        tfRcvValue.setText("Read " + read + " from Bus");
+                    }
+                });
+            } else if (data instanceof KnxControlObject){
+                final byte read = ((KnxControlObject) data).getValue();
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {

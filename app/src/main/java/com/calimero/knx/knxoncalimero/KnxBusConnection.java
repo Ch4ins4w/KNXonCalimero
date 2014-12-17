@@ -3,6 +3,7 @@ package com.calimero.knx.knxoncalimero;
 
 import com.calimero.knx.knxoncalimero.knxobject.KnxBooleanObject;
 import com.calimero.knx.knxoncalimero.knxobject.KnxComparableObject;
+import com.calimero.knx.knxoncalimero.knxobject.KnxControlObject;
 import com.calimero.knx.knxoncalimero.knxobject.KnxFloatObject;
 
 import java.net.InetAddress;
@@ -25,21 +26,23 @@ public class KnxBusConnection extends Observable implements Runnable {
 
     private final String gatewayIp;
     private final String hostIp;
+    private final int port;
     private final Container busActionContainer, resultContainer;
     private KNXNetworkLinkIP netLinkIp = null;
     private ProcessCommunicator processCommunicator;
     private boolean connected;
 
-    public KnxBusConnection(String hostIp, String gatewayIp, Container busActionContainer, Container resultContainer) {
+    public KnxBusConnection(String hostIp, String gatewayIp, int port, Container busActionContainer, Container resultContainer) {
         this.hostIp = hostIp;
         this.gatewayIp = gatewayIp;
+        this.port = port;
         this.busActionContainer = busActionContainer;
         this.resultContainer = resultContainer;
     }
 
     @Override
     public void run() {
-        initBus(hostIp, gatewayIp);
+        initBus();
         if (isConnected()) {
             System.out.println("Verbindung erfolgreich aufgebaut");
         } else {
@@ -57,7 +60,12 @@ public class KnxBusConnection extends Observable implements Runnable {
                     System.out.println("Reading Boolean from Bus: " + object);
                     boolean read = readBooleanFromBus(object.getGroupAddress());
                     ((KnxBooleanObject) object).setValue(read);
+                } else if (object instanceof KnxControlObject) {
+                    System.out.println("Reading Control from Bus: " + object);
+                    byte read = readControlFromBus(object.getGroupAddress());
+                    ((KnxControlObject) object).setValue(read);
                 }
+
                 resultContainer.push(object);
             } else {
                 if (object instanceof KnxBooleanObject) {
@@ -69,11 +77,12 @@ public class KnxBusConnection extends Observable implements Runnable {
         closeBus();
     }
 
-    private synchronized boolean initBus(String hostIp, String gatewayIp) {
+    private synchronized boolean initBus() {
         boolean result = false;
         try {
-            netLinkIp = new KNXNetworkLinkIP(KNXNetworkLinkIP.TUNNEL, new InetSocketAddress(InetAddress.getByName(hostIp), 0), new InetSocketAddress(InetAddress.getByName(gatewayIp), KNXnetIPConnection.IP_PORT), false, new TPSettings(false));
+            netLinkIp = new KNXNetworkLinkIP(KNXNetworkLinkIP.TUNNEL, new InetSocketAddress(InetAddress.getByName(hostIp), 0), new InetSocketAddress(InetAddress.getByName(gatewayIp), port), false, new TPSettings(false));
             processCommunicator = new ProcessCommunicatorImpl(netLinkIp);
+            processCommunicator.setResponseTimeout(1);
             result = true;
         } catch (KNXLinkClosedException e) {
             System.out.println("KNXLinkClosedException, initBus(" + hostIp + ", " + gatewayIp + ")");
@@ -126,6 +135,17 @@ public class KnxBusConnection extends Observable implements Runnable {
             e.printStackTrace();
         }
         return readFloat;
+    }
+
+    private synchronized byte readControlFromBus(GroupAddress groupAddress) {
+        byte readControl = -1;
+        try {
+            readControl = processCommunicator.readControl(groupAddress);
+        } catch (KNXException e) {
+            System.out.println("KNXException, readControlFromBus(" + groupAddress + ")");
+            e.printStackTrace();
+        }
+        return readControl;
     }
 
     private synchronized void closeBus() {
