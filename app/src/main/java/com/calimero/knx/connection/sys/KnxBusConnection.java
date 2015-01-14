@@ -1,10 +1,10 @@
-package com.calimero.knx.knxoncalimero;
+package com.calimero.knx.connection.sys;
 
 
-import com.calimero.knx.knxoncalimero.knxobject.KnxBooleanObject;
-import com.calimero.knx.knxoncalimero.knxobject.KnxComparableObject;
-import com.calimero.knx.knxoncalimero.knxobject.KnxControlObject;
-import com.calimero.knx.knxoncalimero.knxobject.KnxFloatObject;
+import com.calimero.knx.connection.knxobject.KnxBooleanObject;
+import com.calimero.knx.connection.knxobject.KnxComparableObject;
+import com.calimero.knx.connection.knxobject.KnxControlObject;
+import com.calimero.knx.connection.knxobject.KnxFloatObject;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -18,7 +18,7 @@ import tuwien.auto.calimero.link.medium.TPSettings;
 import tuwien.auto.calimero.process.ProcessCommunicator;
 import tuwien.auto.calimero.process.ProcessCommunicatorImpl;
 
-public class KnxBusConnection extends Observable implements Runnable {
+class KnxBusConnection extends Observable implements Runnable {
 
     private final Container busActionContainer, resultContainer, errorContainer;
     private final InetSocketAddress hostSocket;
@@ -94,6 +94,9 @@ public class KnxBusConnection extends Observable implements Runnable {
                             if (object instanceof KnxBooleanObject) {
                                 System.out.println("Writing Boolean to Bus: " + object);
                                 processCommunicator.write(groupAddress, ((KnxBooleanObject) object).getValue());
+                            } else if (object instanceof KnxFloatObject) {
+                                System.out.println("Writing Float to Bus: " + object);
+                                processCommunicator.write(groupAddress, ((KnxFloatObject) object).getValue());
                             }
                         } catch (Exception e) {
                             e.printStackTrace();

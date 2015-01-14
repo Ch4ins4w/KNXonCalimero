@@ -1,6 +1,6 @@
-package com.calimero.knx.knxoncalimero;
+package com.calimero.knx.connection.sys;
 
-import com.calimero.knx.knxoncalimero.knxobject.KnxComparableObject;
+import com.calimero.knx.connection.knxobject.KnxComparableObject;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -9,7 +9,7 @@ import java.util.Observable;
 
 import tuwien.auto.calimero.GroupAddress;
 
-public class Container extends Observable {
+class Container extends Observable {
     private List<KnxComparableObject> objects = new LinkedList<KnxComparableObject>();
 
     public synchronized void push(KnxComparableObject object) {

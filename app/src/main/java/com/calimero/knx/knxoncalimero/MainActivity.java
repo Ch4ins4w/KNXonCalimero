@@ -12,10 +12,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.calimero.knx.knxoncalimero.knxobject.KnxBooleanObject;
-import com.calimero.knx.knxoncalimero.knxobject.KnxComparableObject;
-import com.calimero.knx.knxoncalimero.knxobject.KnxControlObject;
-import com.calimero.knx.knxoncalimero.knxobject.KnxFloatObject;
+import com.calimero.knx.connection.knxobject.KnxBooleanObject;
+import com.calimero.knx.connection.knxobject.KnxComparableObject;
+import com.calimero.knx.connection.knxobject.KnxControlObject;
+import com.calimero.knx.connection.knxobject.KnxFloatObject;
+import com.calimero.knx.connection.sys.KnxCommunicationObject;
 
 import java.util.Observable;
 import java.util.Observer;

@@ -1,10 +1,11 @@
-package com.calimero.knx.knxoncalimero;
+package com.calimero.knx.connection.sys;
 
-import com.calimero.knx.knxoncalimero.Exceptions.NotInResultsException;
-import com.calimero.knx.knxoncalimero.knxobject.KnxBooleanObject;
-import com.calimero.knx.knxoncalimero.knxobject.KnxComparableObject;
-import com.calimero.knx.knxoncalimero.knxobject.KnxControlObject;
-import com.calimero.knx.knxoncalimero.knxobject.KnxFloatObject;
+
+import com.calimero.knx.connection.exception.NotInResultsException;
+import com.calimero.knx.connection.knxobject.KnxBooleanObject;
+import com.calimero.knx.connection.knxobject.KnxComparableObject;
+import com.calimero.knx.connection.knxobject.KnxControlObject;
+import com.calimero.knx.connection.knxobject.KnxFloatObject;
 
 import java.net.UnknownHostException;
 import java.util.Iterator;
@@ -60,6 +61,10 @@ public class KnxCommunicationObject extends Observable implements Observer {
 
     public void writeBoolean(GroupAddress groupAddress, boolean value) {
         taskContainer.push(new KnxBooleanObject(groupAddress, value, false));
+    }
+
+    public void writeFloat(GroupAddress groupAddress, float value) {
+        taskContainer.push(new KnxFloatObject(groupAddress, value, false));
     }
 
     public void readBoolean(GroupAddress groupAddress) {
@@ -155,6 +160,14 @@ public class KnxCommunicationObject extends Observable implements Observer {
             throw e;
         }
         return knxComObj;
+    }
+
+    public Object[] getErrorObjects() {
+        return errorContainer.getAll();
+    }
+
+    public Object[] getResultObjects() {
+        return resultContainer.getAll();
     }
 
     private class ContinuousRead extends TimerTask {

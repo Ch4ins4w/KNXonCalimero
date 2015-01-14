@@ -1,4 +1,4 @@
-package com.calimero.knx.knxoncalimero.knxobject;
+package com.calimero.knx.connection.knxobject;
 
 
 import java.util.Date;
