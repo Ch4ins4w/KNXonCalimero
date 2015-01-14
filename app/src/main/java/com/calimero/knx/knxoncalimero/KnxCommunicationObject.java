@@ -120,7 +120,9 @@ public class KnxCommunicationObject extends Observable implements Observer {
     @Override
     public void update(Observable observable, Object data) {
         if (data instanceof Boolean) {
-            timer.cancel();
+            if (!(Boolean) data) {
+                timer.cancel();
+            }
         }
         this.setChanged();
         this.notifyObservers(data);
