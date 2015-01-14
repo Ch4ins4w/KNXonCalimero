@@ -9,6 +9,9 @@ public class KnxComparableObject implements Comparable<KnxComparableObject> {
     private final Date createDate;
     private final GroupAddress groupAddress;
     private final boolean read;
+    private boolean unprocessable = false;
+
+    private int errors = 0;
 
     public KnxComparableObject(GroupAddress groupAddress, boolean read) {
         this.createDate = new Date();
@@ -47,6 +50,21 @@ public class KnxComparableObject implements Comparable<KnxComparableObject> {
     @Override
     public String toString() {
         return "Date: " + createDate + " GroupAddress: " + groupAddress + " isRead: " + read;
+    }
+
+    public int getErrors() {
+        return errors;
+    }
+
+    public void increaseErrors() {
+        ++this.errors;
+        if (errors == 3) {
+            unprocessable = true;
+        }
+    }
+
+    public boolean isUnprocessable() {
+        return unprocessable;
     }
 }
 

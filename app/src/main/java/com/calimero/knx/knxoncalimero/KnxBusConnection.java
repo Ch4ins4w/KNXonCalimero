@@ -13,10 +13,6 @@ import java.util.Observable;
 
 import tuwien.auto.calimero.GroupAddress;
 import tuwien.auto.calimero.exception.KNXException;
-import tuwien.auto.calimero.exception.KNXFormatException;
-import tuwien.auto.calimero.exception.KNXTimeoutException;
-import tuwien.auto.calimero.knxnetip.KNXnetIPConnection;
-import tuwien.auto.calimero.link.KNXLinkClosedException;
 import tuwien.auto.calimero.link.KNXNetworkLinkIP;
 import tuwien.auto.calimero.link.medium.TPSettings;
 import tuwien.auto.calimero.process.ProcessCommunicator;
@@ -24,131 +20,113 @@ import tuwien.auto.calimero.process.ProcessCommunicatorImpl;
 
 public class KnxBusConnection extends Observable implements Runnable {
 
-    private final String gatewayIp;
-    private final String hostIp;
-    private final int port;
-    private final Container busActionContainer, resultContainer;
-    private KNXNetworkLinkIP netLinkIp = null;
+    private final Container busActionContainer, resultContainer, errorContainer;
+    private final InetSocketAddress hostSocket;
+    private final InetSocketAddress gatewaySocket;
+    private KNXNetworkLinkIP netLinkIp;
     private ProcessCommunicator processCommunicator;
     private boolean connected;
+    private boolean terminated = false;
 
-    public KnxBusConnection(String hostIp, String gatewayIp, int port, Container busActionContainer, Container resultContainer) {
-        this.hostIp = hostIp;
-        this.gatewayIp = gatewayIp;
-        this.port = port;
+    public KnxBusConnection(String hostIp, String gatewayIp, int gatewayPort, Container busActionContainer, Container resultContainer, Container errorContainer) throws UnknownHostException {
+        try {
+            this.hostSocket = new InetSocketAddress(InetAddress.getByName(hostIp), 0);
+        } catch (UnknownHostException e) {
+            System.out.println("Host nicht gefunden");
+            e.printStackTrace();
+            throw e;
+        }
+        try {
+            this.gatewaySocket = new InetSocketAddress(InetAddress.getByName(gatewayIp), gatewayPort);
+        } catch (UnknownHostException e) {
+            System.out.println("Gateway nicht gefunden");
+            e.printStackTrace();
+            throw e;
+        }
         this.busActionContainer = busActionContainer;
         this.resultContainer = resultContainer;
+        this.errorContainer = errorContainer;
     }
 
     @Override
     public void run() {
-        initBus();
-        if (isConnected()) {
-            System.out.println("Verbindung erfolgreich aufgebaut");
-        } else {
-            System.out.println("Verbindung konnte nicht aufgebaut werden");
-        }
         KnxComparableObject object;
-        while (isConnected()) {
-            object = busActionContainer.pop();
-            if (object.isRead()) {
-                if (object instanceof KnxFloatObject) {
-                    System.out.println("Reading Float from Bus: " + object);
-                    float read = readFloatFromBus(object.getGroupAddress());
-                    ((KnxFloatObject) object).setValue(read);
-                } else if (object instanceof KnxBooleanObject) {
-                    System.out.println("Reading Boolean from Bus: " + object);
-                    boolean read = readBooleanFromBus(object.getGroupAddress());
-                    ((KnxBooleanObject) object).setValue(read);
-                } else if (object instanceof KnxControlObject) {
-                    System.out.println("Reading Control from Bus: " + object);
-                    byte read = readControlFromBus(object.getGroupAddress());
-                    ((KnxControlObject) object).setValue(read);
+        GroupAddress groupAddress;
+        int errorCount = 1;
+        while (errorCount < 5) {
+            if (!isConnected()) {
+                initBus();
+                if (isConnected()) {
+                    System.out.println("Verbinden erfolgreich im Versuch " + errorCount);
+                    errorCount = 1;
+                } else {
+                    System.out.println("Verbinden fehlgeschlagen im Versuch " + errorCount);
+                    errorCount++;
                 }
-
-                resultContainer.push(object);
             } else {
-                if (object instanceof KnxBooleanObject) {
-                    System.out.println("Writing Boolean to Bus: " + object);
-                    writeBooleanToBus(object.getGroupAddress(), ((KnxBooleanObject) object).getValue());
+                object = busActionContainer.pop();
+                if (!object.isUnprocessable()) {
+                    groupAddress = object.getGroupAddress();
+                    if (object.isRead()) {
+                        try {
+                            if (object instanceof KnxFloatObject) {
+                                System.out.println("Reading Float from Bus: " + object);
+                                float read = processCommunicator.readFloat(groupAddress);
+                                ((KnxFloatObject) object).setValue(read);
+                            } else if (object instanceof KnxBooleanObject) {
+                                System.out.println("Reading Boolean from Bus: " + object);
+                                boolean read = processCommunicator.readBool(groupAddress);
+                                ((KnxBooleanObject) object).setValue(read);
+                            } else if (object instanceof KnxControlObject) {
+                                System.out.println("Reading Control from Bus: " + object);
+                                byte read = processCommunicator.readControl(groupAddress);
+                                ((KnxControlObject) object).setValue(read);
+                            }
+                            resultContainer.push(object);
+                        } catch (KNXException e) {
+                            e.printStackTrace();
+                            object.increaseErrors();
+                            busActionContainer.push(object);
+                            closeBus();
+                        }
+                    } else {
+                        try {
+                            if (object instanceof KnxBooleanObject) {
+                                System.out.println("Writing Boolean to Bus: " + object);
+                                processCommunicator.write(groupAddress, ((KnxBooleanObject) object).getValue());
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            object.increaseErrors();
+                            busActionContainer.push(object);
+                            closeBus();
+                        }
+                    }
+                } else {
+                    System.out.println("Can not Process Object: " + object);
+                    errorContainer.push(object);
                 }
             }
         }
+        terminated = true;
         closeBus();
     }
 
     private synchronized boolean initBus() {
         boolean result = false;
         try {
-            netLinkIp = new KNXNetworkLinkIP(KNXNetworkLinkIP.TUNNEL, new InetSocketAddress(InetAddress.getByName(hostIp), 0), new InetSocketAddress(InetAddress.getByName(gatewayIp), port), false, new TPSettings(false));
+            netLinkIp = new KNXNetworkLinkIP(KNXNetworkLinkIP.TUNNEL, hostSocket, gatewaySocket, false, new TPSettings(false));
             processCommunicator = new ProcessCommunicatorImpl(netLinkIp);
             processCommunicator.setResponseTimeout(1);
             result = true;
-        } catch (KNXLinkClosedException e) {
-            System.out.println("KNXLinkClosedException, initBus(" + hostIp + ", " + gatewayIp + ")");
-            e.printStackTrace();
-        } catch (KNXFormatException e) {
-            System.out.println("KNXFormatException, initBus(" + hostIp + ", " + gatewayIp + ")");
-            e.printStackTrace();
-        } catch (KNXException e) {
-            System.out.println("KNXException, initBus(" + hostIp + ", " + gatewayIp + ")");
-            e.printStackTrace();
-        } catch (UnknownHostException e) {
-            System.out.println("UnknownHostException, initBus(" + hostIp + ", " + gatewayIp + ")");
+        } catch (Exception e) {
+            System.out.println(e.getClass().toString() + ", initBus(" + hostSocket.getAddress() + ", " + gatewaySocket.getAddress() + ")");
             e.printStackTrace();
         }
         return result;
     }
 
-    private synchronized boolean writeBooleanToBus(GroupAddress groupAddress, boolean value) {
-        boolean result = false;
-        try {
-            processCommunicator.write(groupAddress, value);
-            result = true;
-        } catch (KNXTimeoutException e) {
-            System.out.println("KNXTimeoutException, writeBooleanToBus(" + value + ", " + groupAddress + ")");
-            e.printStackTrace();
-        } catch (KNXLinkClosedException e) {
-            System.out.println("KNXLinkClosedException, writeBooleanToBus(" + value + ", " + groupAddress + ")");
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-    private synchronized boolean readBooleanFromBus(GroupAddress groupAddress) {
-        boolean readBoolean = false;
-        try {
-            readBoolean = processCommunicator.readBool(groupAddress);
-        } catch (KNXException e) {
-            System.out.println("KNXException, readBooleanFromBus(" + groupAddress + ")");
-            e.printStackTrace();
-        }
-        return readBoolean;
-    }
-
-    private synchronized float readFloatFromBus(GroupAddress groupAddress) {
-        float readFloat = -1;
-        try {
-            readFloat = processCommunicator.readFloat(groupAddress);
-        } catch (KNXException e) {
-            System.out.println("KNXException, readFloatFromBus(" + groupAddress + ")");
-            e.printStackTrace();
-        }
-        return readFloat;
-    }
-
-    private synchronized byte readControlFromBus(GroupAddress groupAddress) {
-        byte readControl = -1;
-        try {
-            readControl = processCommunicator.readControl(groupAddress);
-        } catch (KNXException e) {
-            System.out.println("KNXException, readControlFromBus(" + groupAddress + ")");
-            e.printStackTrace();
-        }
-        return readControl;
-    }
-
-    private synchronized void closeBus() {
+    private void closeBus() {
         if (netLinkIp != null) {
             netLinkIp.close();
             netLinkIp = null;
@@ -156,7 +134,11 @@ public class KnxBusConnection extends Observable implements Runnable {
         setConnected(false);
     }
 
-    public synchronized boolean isConnected() {
+    public synchronized boolean terminated() {
+        return terminated;
+    }
+
+    private boolean isConnected() {
         boolean returnVal = false;
         if (netLinkIp != null) {
             returnVal = netLinkIp.isOpen();
@@ -171,6 +153,6 @@ public class KnxBusConnection extends Observable implements Runnable {
         }
         System.out.println("setConnected: " + connected);
         this.connected = connected;
-        this.notifyObservers();
+        this.notifyObservers((Boolean) connected);
     }
 }

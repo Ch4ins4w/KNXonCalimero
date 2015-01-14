@@ -1,6 +1,9 @@
 package com.calimero.knx.knxoncalimero;
 
 import android.app.Activity;
+import android.content.Context;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,6 +25,7 @@ import tuwien.auto.calimero.GroupAddress;
 
 public class MainActivity extends Activity implements Observer {
     public static boolean first = true;
+    private String hostIp;
     //public static KnxBusConnection testConnection;
     //Gui-Elemente
     EditText tfGatewayIP, tfSendHaupt, tfSendMitte, tfSendSub, tfRcvHaupt, tfRcvMitte, tfRcvSub, tfRcvValue, tfSendValue;
@@ -56,7 +60,7 @@ public class MainActivity extends Activity implements Observer {
                 sendAdress = new GroupAddress(Integer.valueOf(tfSendHaupt.getText().toString()),
                         Integer.valueOf(tfSendMitte.getText().toString()),
                         Integer.valueOf(tfSendSub.getText().toString()));
-                knxComObj.writeBooleanToBus(sendAdress,tfSendValue.getText().toString().equals("1"));
+                knxComObj.writeBoolean(sendAdress, tfSendValue.getText().toString().equals("1"));
             }
         });
 
@@ -65,10 +69,8 @@ public class MainActivity extends Activity implements Observer {
         connectButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //todo: gateway ip überprüfung
-                //todo: Host Ip dynamisch bestimmen oder Gui element dafür implementieren
                 try {
-                    knxComObj = KnxCommunicationObject.getInstance("192.168.10.180",tfGatewayIP.getText().toString());
+                    knxComObj = KnxCommunicationObject.getInstance(getHostIp(), tfGatewayIP.getText().toString());
                     knxComObj.addObserver(thisMainActivity);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -93,9 +95,19 @@ public class MainActivity extends Activity implements Observer {
                 rcvAdress = new GroupAddress(Integer.valueOf(tfRcvHaupt.getText().toString()),
                         Integer.valueOf(tfRcvMitte.getText().toString()),
                         Integer.valueOf(tfRcvSub.getText().toString()));
-                knxComObj.readBoolean(rcvAdress);
+                knxComObj.readPeriodicFloat(rcvAdress, 1000);
             }
         });
+    }
+
+    private String getHostIp() {
+        if (this.hostIp == null) {
+            WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+            int ip = wifiInfo.getIpAddress();
+            this.hostIp = String.format("%d.%d.%d.%d", (ip & 0xff), (ip >> 8 & 0xff), (ip >> 16 & 0xff), (ip >> 24 & 0xff));
+        }
+        return this.hostIp;
     }
 
 
@@ -135,7 +147,7 @@ public class MainActivity extends Activity implements Observer {
                         tfRcvValue.setText("Read " + read + " from Bus");
                     }
                 });
-            } else if (data instanceof KnxBooleanObject){
+            } else if (data instanceof KnxFloatObject) {
                 final float read = ((KnxFloatObject) data).getValue();
                 runOnUiThread(new Runnable() {
                     @Override
