@@ -10,19 +10,22 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.calimero.knx.knxoncalimero.knxobject.KnxBooleanObject;
-import com.calimero.knx.knxoncalimero.knxobject.KnxFloatObject;
+
+import com.calimero.knx.connection.knxobject.KnxComparableObject;
+import com.calimero.knx.connection.knxobject.KnxFloatObject;
+import com.calimero.knx.connection.sys.KnxCommunicationObject;
 
 import java.util.Observable;
 import java.util.Observer;
 
 import tuwien.auto.calimero.GroupAddress;
+import tuwien.auto.calimero.exception.KNXAckTimeoutException;
 
 
 public class MainActivity extends Activity implements Observer {
     public static boolean first = true;
-    public static KnxBusConnection testConnection;
-    KnxBusConnection connectionRunnable;
+    private KnxCommunicationObject knxComObj;
+
     //Gui-Elemente
     //EditText tfGatewayIP, tfSendHaupt, tfSendMitte, tfSendSub, tfRcvHaupt, tfRcvMitte, tfRcvSub, tfRcvValue, tfSendValue;
     EditText tfGatewayIP,tfHaupt, tfMitte, tfSub;
@@ -32,17 +35,21 @@ public class MainActivity extends Activity implements Observer {
     Button sendButton, connectButton, readButton;
     GroupAddress rcvAdress, sendAdress;
     MainActivity thisMainActivity;
-    private Container resultContainer, busActionContainer;
+    GroupAddress windadr;
+    GroupAddress tempadr;
+    GroupAddress lichtadr;
+    GroupAddress adr;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.wetterstation_layout);
+        //setContentView(R.layout.start);
         thisMainActivity = this;
         //testConnection = new KnxBusConnection("", "192.168.10.28");
-        busActionContainer = new Container();
-        resultContainer = new Container();
-        resultContainer.addObserver(this);
+
 
         wetter = (ImageView) findViewById(R.id.wetter);
         lux1 = (TextView) findViewById(R.id.lux1);
@@ -83,10 +90,24 @@ public class MainActivity extends Activity implements Observer {
             public void onClick(View view) {
                 //todo: gateway ip überprüfung
                 //todo: Host Ip dynamisch bestimmen oder Gui element dafür implementieren
-                connectionRunnable = new KnxBusConnection("192.168.10.123", tfGatewayIP.getText().toString(), busActionContainer, resultContainer);
-                connectionRunnable.addObserver(thisMainActivity);
-                Thread connectionThread = new Thread(connectionRunnable);
-                connectionThread.start();
+                try {
+                    knxComObj = KnxCommunicationObject.getInstance("192.168.10.183",tfGatewayIP.getText().toString());
+                    knxComObj.addObserver(thisMainActivity);
+                    windadr = new GroupAddress(Integer.valueOf("3"),
+                            Integer.valueOf("3"),
+                            Integer.valueOf("2"));
+                    tempadr = new GroupAddress(Integer.valueOf("3"),
+                            Integer.valueOf("3"),
+                            Integer.valueOf("1"));
+                    lichtadr = new GroupAddress(Integer.valueOf("3"),
+                            Integer.valueOf("3"),
+                            Integer.valueOf("0"));
+                    knxComObj.readPeriodicFloat(windadr, 1000);
+                    knxComObj.readPeriodicFloat(tempadr, 1000);
+                    knxComObj.readPeriodicFloat(lichtadr, 1000);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -104,10 +125,23 @@ public class MainActivity extends Activity implements Observer {
         readButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
-                rcvAdress = new GroupAddress(Integer.valueOf(tfHaupt.getText().toString()),
+                /*rcvAdress = new GroupAddress(Integer.valueOf(tfHaupt.getText().toString()),
                         Integer.valueOf(tfMitte.getText().toString()),
                         Integer.valueOf(tfSub.getText().toString()));
-                busActionContainer.push(new KnxBooleanObject(rcvAdress, true));
+                    */
+                windadr = new GroupAddress(Integer.valueOf("3"),
+                        Integer.valueOf("3"),
+                        Integer.valueOf("2"));
+                tempadr = new GroupAddress(Integer.valueOf("3"),
+                        Integer.valueOf("3"),
+                        Integer.valueOf("1"));
+                lichtadr = new GroupAddress(Integer.valueOf("3"),
+                        Integer.valueOf("3"),
+                        Integer.valueOf("0"));
+                    knxComObj.readFloat(windadr);
+                    knxComObj.readFloat(tempadr);
+                    knxComObj.readFloat(lichtadr);
+                    //knxComObj.readBoolean(rcvAdress);
             }
         });
     }
@@ -137,37 +171,34 @@ public class MainActivity extends Activity implements Observer {
 
     @Override
     public void update(Observable observable, Object data) {
-        System.out.println("Update from MainActivity called:" + observable);
-        if (observable.equals(resultContainer)) {
-            /*if (data instanceof KnxBooleanObject) {
-                final boolean read = ((KnxBooleanObject) data).getValue();
+        System.out.println("Update from MainActivity called by: " + observable);
+        System.out.println("with data: " + observable);
+        if (data instanceof KnxComparableObject) {
+            adr = ((KnxComparableObject) data).getGroupAddress();
+            if (data instanceof KnxFloatObject) {
+                final float read = ((KnxFloatObject) data).getValue();
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         System.out.println("RunOnUiThread Run runned");
-                        tfRcvValue.setText("Read " + read + " from Bus");
+                        if(adr.equals(windadr)) {
+                            wind.setText("Windstärke:" + read);
+                        }
+                        if(adr.equals(tempadr)) {
+                            temperatur.setText("Temperatur:" + read);
+                        }
+                        if(adr.equals(lichtadr)) {
+                            lux1.setText("Lux:" + read);
+                        }
                     }
                 });
-            }*/
-            if (data instanceof KnxFloatObject) {
-                final float read = ((KnxFloatObject) data).getValue();
-                if(((KnxFloatObject) data).getGroupAddress().equals(new GroupAddress(6,6,6))) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            System.out.println("RunOnUiThread Run runned");
-
-                            wind.setText("Read " + read + " from Bus");
-                        }
-                    });
-                }
             }
-        } else if (observable.equals(connectionRunnable)) {
+        } else if (knxComObj != null) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     System.out.println("RunOnUiThread Run runned");
-                    if (connectionRunnable.isConnected()) {
+                    if (knxComObj.isConnected()) {
                         tvConnectionStatus.setText("Connected");
                     } else {
                         tvConnectionStatus.setText("Connection Error");
